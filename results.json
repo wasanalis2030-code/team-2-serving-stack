@@ -1,0 +1,10 @@
+{
+  "naive_image": "aidc-serving:naive",
+  "naive_size": "16.5GB",
+  "slim_image": "wasansh/aidc-serving:cpu-v1",
+  "slim_size": "1.61GB",
+  "cached_rebuild_seconds": 2.35,
+  "volume_cache_reused": true,
+  "health_check": "PASS",
+  "completion_check": "PASS"
+}

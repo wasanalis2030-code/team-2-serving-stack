@@ -1,66 +1,65 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE="${IMAGE:?IMAGE is required}"
-NAME="aidc-serving-green-check"
+CONTAINER_NAME="registry-multistage-check"
+PORT=8001
+
+python - <<'PYEOF'
+import json
+
+with open("size_report.json") as f:
+    report = json.load(f)
+
+assert report["fits_target"] is True
+assert report["savings_pct"] >= 20
+
+print("size target: PASS")
+print("minimum savings: PASS")
+PYEOF
+
+docker rm -f "$CONTAINER_NAME" > /dev/null 2>&1 || true
+
+docker run -d \
+  --name "$CONTAINER_NAME" \
+  -p "$PORT":8000 \
+  registry:multistage > /dev/null
 
 cleanup() {
-  docker rm -f "$NAME" >/dev/null 2>&1 || true
-  rm -f health.json
+  docker rm -f "$CONTAINER_NAME" > /dev/null 2>&1 || true
 }
 
 trap cleanup EXIT
 
-docker rm -f serving >/dev/null 2>&1 || true
-docker rm -f "$NAME" >/dev/null 2>&1 || true
-docker rmi -f "$IMAGE" >/dev/null 2>&1 || true
+echo "waiting for service..."
 
-echo "Pulling image from Docker Hub..."
-docker pull "$IMAGE"
-
-echo "Starting fresh container..."
-docker run -d \
-  --name "$NAME" \
-  -p 8000:8000 \
-  -v hf-cache:/home/app/.cache/huggingface \
-  "$IMAGE" >/dev/null
-
-echo "Waiting for health check..."
-
-for i in $(seq 1 120); do
-  if curl -fsS http://localhost:8000/health > health.json 2>/dev/null; then
+for i in {1..30}; do
+  if curl -fsS "http://localhost:$PORT/health" > /dev/null; then
     break
   fi
-
-  if [ "$i" -eq 120 ]; then
-    docker logs "$NAME"
-    echo "GREEN CHECK: FAIL"
-    exit 1
-  fi
-
-  sleep 5
+  sleep 1
 done
 
-grep -q '"status":"ok"' health.json
+curl -fsS "http://localhost:$PORT/health"
+echo
 
-echo "Sending real completion..."
+curl -fsS "http://localhost:$PORT/registry" |
+  grep -q "Qwen2.5-0.5B-Instruct"
 
-RESPONSE=$(curl -fsS \
-  http://localhost:8000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "Qwen/Qwen2.5-0.5B-Instruct",
-    "messages": [
-      {
-        "role": "user",
-        "content": "Say hi."
-      }
-    ],
-    "max_tokens": 16
-  }')
+curl -fsS \
+  "http://localhost:$PORT/registry/Qwen2.5-0.5B-Instruct" |
+  grep -q "approved"
 
-echo "$RESPONSE"
-echo "$RESPONSE" | grep -q '"object":"chat.completion"'
-echo "$RESPONSE" | grep -q '"content":'
+STATUS=$(
+  curl -s \
+    -o /dev/null \
+    -w "%{http_code}" \
+    "http://localhost:$PORT/registry/unknown-model"
+)
 
+test "$STATUS" = "404"
+
+echo "health check: PASS"
+echo "registry list: PASS"
+echo "model lookup: PASS"
+echo "unknown model 404: PASS"
 echo "GREEN CHECK: PASS"

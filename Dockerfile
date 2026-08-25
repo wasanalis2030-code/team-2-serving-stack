@@ -1,23 +1,29 @@
-FROM python:3.11-slim
+FROM python:3.11-slim AS builder
 
-RUN useradd --create-home app
-ENV HF_HOME=/home/app/.cache/huggingface
-
-WORKDIR /app
+WORKDIR /install
 
 COPY app/requirements.txt .
 
-RUN pip install --no-cache-dir \
-      --index-url https://download.pytorch.org/whl/cpu \
-      --extra-index-url https://pypi.org/simple \
-      -r requirements.txt
+RUN pip install \
+    --no-cache-dir \
+    --prefix=/install/deps \
+    -r requirements.txt
 
-COPY app/ .
 
-RUN mkdir -p /home/app/.cache/huggingface \
-    && chown -R app:app /home/app/.cache /app
+FROM python:3.11-slim AS runtime
 
-USER app
+WORKDIR /app
+
+COPY --from=builder /install/deps /usr/local
+
+COPY app/main.py app/registry.json ./
+
+ENV PYTHONDONTWRITEBYTECODE=1
+RUN rm -rf \
+    /usr/local/lib/python3.11/site-packages/pip* \
+    /usr/local/lib/python3.11/site-packages/setuptools* \
+    /usr/local/lib/python3.11/site-packages/wheel* \
+    /usr/local/bin/pip*
 
 EXPOSE 8000
 

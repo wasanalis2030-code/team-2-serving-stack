@@ -1,5 +1,5 @@
-import json
-import os
+import json     # test cache change
+import os       # second cache change
 
 from fastapi import FastAPI, HTTPException
 
@@ -35,4 +35,3 @@ def get_model(name: str):
         )
 
     return REGISTRY[name]
-    

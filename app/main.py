@@ -38,3 +38,19 @@ def chat_completions(req: CompletionRequest):
         "reply": f"(on {DEVICE}) you said: {req.prompt}",
         "device": DEVICE
     }
+    
+@app.post("/v1/embeddings")
+def embeddings(payload: dict):
+    if DEVICE != "cuda":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Embeddings require a GPU-backed instance; "
+                "this instance is running in CPU-fallback mode."
+            )
+        )
+
+    return {
+        "vector": [0.1] * 8,
+        "device_used": DEVICE
+    }

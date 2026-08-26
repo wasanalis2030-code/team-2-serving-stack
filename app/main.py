@@ -31,18 +31,21 @@ app = FastAPI(
     version="wk2-docker"
 )
 
-print(f"Loading {MODEL_ID} on CPU...")
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DTYPE = torch.float16 if DEVICE == "cuda" else torch.float32
+
+print(f"Device selected: {DEVICE}")
+print(f"Loading {MODEL_ID} on {DEVICE}...")
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_ID,
-    torch_dtype=torch.float32
+    torch_dtype=DTYPE,
 )
 
-model.to("cpu")
+model.to(DEVICE)
 model.eval()
-
 print("Model ready")
 
 
@@ -75,7 +78,7 @@ def _build_inputs(req: ChatCompletionRequest):
         return_dict=True,
     )
 
-    input_ids = encoded["input_ids"]
+    input_ids = encoded["input_ids"].to(DEVICE)
     prompt_tokens = input_ids.shape[1]
 
     return input_ids, prompt_tokens

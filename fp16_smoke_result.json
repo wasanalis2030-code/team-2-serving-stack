@@ -1,0 +1,9 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "total_attempts": 10,
+  "score": 10,
+  "distractor_attempts": 2,
+  "distractor_call_free": 2,
+  "distractor_majority_clean": true,
+  "passed": true
+}

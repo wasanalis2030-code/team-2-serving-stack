@@ -1,0 +1,18 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "model_rope_scaling": null,
+  "installed_vllm_version": "0.6.2",
+  "installed_outlines_version": "0.0.44",
+  "torch_version": "2.4.0+cu121",
+  "cuda_version": "12.1",
+  "gpu": "Tesla T4",
+  "historical_rope_keyerror_reproduced": false,
+  "server_start_status": "success",
+  "models_endpoint_status": 200,
+  "chat_endpoint_status": 500,
+  "observed_error": "ModuleNotFoundError: No module named 'pyairports'",
+  "diagnosis": "The current model configuration exposes rope_scaling=None, so the historical RoPE factor KeyError was not reproduced with vLLM 0.6.2. The server started and /v1/models returned HTTP 200. A real chat request exposed a separate transitive dependency failure in outlines involving pyairports.",
+  "remediation_attempted": "Installed pyairports from the available package index and tested outlines 0.0.44.",
+  "remediation_outcome": "The server starts, but the chat endpoint still fails because the available pyairports 0.0.1 package does not provide the pyairports.airports module required by outlines.",
+  "engineering_conclusion": "The original model-config compatibility failure is not present in this environment. The remaining endpoint failure is a different dependency compatibility issue and is documented without claiming a successful service fix."
+}

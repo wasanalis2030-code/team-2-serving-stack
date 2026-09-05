@@ -1,0 +1,17 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "cold_no_warmup_seconds": {
+    "128": 2.2202,
+    "512": 0.7752,
+    "2048": 0.8584
+  },
+  "fixed_after_warmup_seconds": {
+    "128": 0.7642,
+    "512": 0.7882,
+    "2048": 0.8945
+  },
+  "cold_start_confound_observed": true,
+  "fixed_trend_is_monotonic": true,
+  "diagnosis": "The first 128-token measurement paid one-time CUDA and framework initialization costs, making the shortest prompt look slower than longer prompts.",
+  "fix": "Run and discard a warm-up generation before timing the context-length sweep."
+}
